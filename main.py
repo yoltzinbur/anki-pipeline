@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 import requests
 import re
+from urllib.parse import quote
 from bs4 import BeautifulSoup
 
 app = FastAPI(title="Netzverb API")
@@ -17,6 +18,9 @@ headers = {
     "Sec-Track": "1",
     "Upgrade-Insecure-Requests": "1"
 }
+
+# Letras (incluye diéresis y ß), con espacios, guiones, apóstrofos o puntos entre ellas
+VALID_WORD = re.compile(r"[^\W\d_](?:[^\W\d_]|[ '’.\-])*")
 
 def _parse_verbformen(soup: BeautifulSoup, w: str) -> dict:
   # Variables del elemento
@@ -205,37 +209,46 @@ def inicio():
 @app.get('/api/word')
 def search(w: str, c: str = ""):
 
+  w = w.strip()
+  if not w:
+    raise HTTPException(status_code=400, detail="El parámetro 'w' no puede estar vacío")
+  if not VALID_WORD.fullmatch(w):
+    raise HTTPException(status_code=400, detail=f"'{w}' contiene caracteres no válidos para una palabra")
+
+  # Codificar la palabra para que caracteres como "/", "?" o ")" no alteren la URL
+  slug = quote(w, safe="")
+
   session = requests.Session()
   session.headers.update(headers)
-  
+
   verify = True
   url = ""
 
   match c.lower():
-    case "verb": 
-      url = f"https://www.verbformen.es/conjugacion/{w}.htm"
-    case "noun": 
-      url = f"https://www.verbformen.es/declinacion/sustantivos/{w}.htm"
-    case "adjective": 
-      url = f"https://www.verbformen.es/declinacion/adjetivos/{w}.htm"          
+    case "verb":
+      url = f"https://www.verbformen.es/conjugacion/{slug}.htm"
+    case "noun":
+      url = f"https://www.verbformen.es/declinacion/sustantivos/{slug}.htm"
+    case "adjective":
+      url = f"https://www.verbformen.es/declinacion/adjetivos/{slug}.htm"
     case "adverb":
-      url = f"https://www.woerter.es/adverbios/{w}.htm"
+      url = f"https://www.woerter.es/adverbios/{slug}.htm"
       verify = False
-    case "article": 
-      url = f"https://www.verbformen.es/declinacion/articulos/{w}.htm"
-    case "pronoun": 
-      url = f"https://www.verbformen.es/declinacion/pronombres/{w}.htm"
+    case "article":
+      url = f"https://www.verbformen.es/declinacion/articulos/{slug}.htm"
+    case "pronoun":
+      url = f"https://www.verbformen.es/declinacion/pronombres/{slug}.htm"
     case "preposition":
-      url = f"https://www.woerter.es/prepositions/{w}.htm"
+      url = f"https://www.woerter.es/prepositions/{slug}.htm"
       verify = False
     case "conjunction":
-      url = f"https://www.woerter.es/conjunctions/{w}.htm"
+      url = f"https://www.woerter.es/conjunctions/{slug}.htm"
       verify = False
     case "particle":
-      url = f"https://www.woerter.es/particles/{w}.htm"
+      url = f"https://www.woerter.es/particles/{slug}.htm"
       verify = False
-    case "": 
-      url = f"https://www.verbformen.es/?w={w}"
+    case "":
+      url = f"https://www.verbformen.es/?w={slug}"
     case _:
       raise HTTPException(status_code=404, detail="Tipo de palabra no válida")
 
@@ -265,7 +278,8 @@ def search(w: str, c: str = ""):
 
     #* ==================== Verificar si existe una lista de coincidencias ====================
     i_tag = article.find("i")
-    has_no_results = i_tag and re.search(f"No se encontraron palabras con '{w}'", i_tag.text)
+    # Comparación de texto literal: la palabra no debe interpretarse como expresión regular
+    has_no_results = i_tag and f"No se encontraron palabras con '{w}'" in i_tag.text
     search_results = article.find_all("div", class_="bTrf rClear")
 
     if has_no_results and not search_results:
@@ -404,5 +418,7 @@ def search(w: str, c: str = ""):
     }
   except HTTPException as http_ex:
     raise http_ex
+  except requests.exceptions.RequestException:
+    raise HTTPException(status_code=502, detail="No se pudo conectar con la fuente. Intente más tarde.")
   except Exception as e:
     raise HTTPException(status_code=500, detail=f"{str(e)}")

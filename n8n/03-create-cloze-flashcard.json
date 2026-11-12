@@ -1,0 +1,690 @@
+{
+  "name": "03 - Create Cloze Flashcards",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        192
+      ],
+      "id": "3d34dd50-6830-4f71-9e44-61602bccf8c7",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "Ready to Export",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "28bbff70-b3ca-4cd9-ba2c-5e5f7ffc1095"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Export"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "17a868f0-ebd7-4012-944b-f89a353fd799",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "Update in Anki",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Update"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        48
+      ],
+      "id": "23dc55cb-4da5-4f89-9e5b-c86d4545191e",
+      "name": "Route by Status"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8765",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  action: 'updateNoteFields',\n  version: 6,\n  params: {\n    note: {\n      id: $('Prepare Note').item.json.ankiId,\n      fields: $('Prepare Note').item.json.fields\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        144
+      ],
+      "id": "962331d8-bf6f-414e-9e51-f0385af9f041",
+      "name": "Update Note Fields",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8765",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  action: 'addNote',\n  version: 6,\n  params: {\n    note: {\n      deckName: $json.deckName,\n      modelName: $json.modelName,\n      fields: $json.fields,\n      tags: $json.tags\n    }\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        -96
+      ],
+      "id": "babd090e-6719-49f3-b039-2eafbe34d5a5",
+      "name": "Add Note",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Prepare Note').item.json.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "AnkiStatus|select",
+              "selectValue": "In Anki"
+            },
+            {
+              "key": "AnkiID|number",
+              "numberValue": "={{ $json.result }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        -96
+      ],
+      "id": "ad9b98e0-28e3-4a92-8635-dddb8b3a6dac",
+      "name": "Mark In Anki + Save ID",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        448,
+        336
+      ],
+      "id": "27aac28e-b14f-4b40-833e-80d4f9e834a1",
+      "name": "Loop Over Pages"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "<YOUR_NOTION_GRAMMAR_DATABASE_ID>",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "AnkiStatus|select",
+              "condition": "equals",
+              "selectValue": "Ready to Export"
+            },
+            {
+              "key": "AnkiStatus|select",
+              "condition": "equals",
+              "selectValue": "Update in Anki"
+            }
+          ]
+        },
+        "options": {},
+        "matchType": "anyFilter"
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        336
+      ],
+      "id": "30147af9-349f-47a8-9423-803336bed8bd",
+      "name": "Get Pending Pages",
+      "retryOnFail": true,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        384
+      ],
+      "id": "c47aa467-3861-4fc9-aee1-02c0dcc63a98",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c5b86598-d4d5-4d63-ae35-bc5ca880ab99",
+              "leftValue": "={{ ($json.result?.[0]?.tags ?? []).filter(tag => tag.startsWith('German::')).sort().join(' ') === [...$('Prepare Note').item.json.tags].sort().join(' ') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        144
+      ],
+      "id": "f4e760d5-ee81-4475-8351-a0536fbc2e49",
+      "name": "Tags Up to Date?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "beb378bd-cf7f-4aba-87a9-60873b337fbb",
+              "leftValue": "={{ !$json.error && typeof $json.result === 'number' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1344,
+        -96
+      ],
+      "id": "21061836-a2ad-4f47-ba4a-e24c85ee7f29",
+      "name": "Note Created?"
+    },
+    {
+      "parameters": {
+        "url": "http://host.docker.internal:8765",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  action: 'notesInfo',\n  version: 6,\n  params: {\n    notes: [$json.ankiId]\n  }\n}) }}",
+        "options": {},
+        "method": "POST"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1120,
+        144
+      ],
+      "id": "0fd8531c-4b26-416a-addf-349d2340b051",
+      "name": "Get Note Info"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8765",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  action: 'removeTags',\n  version: 6,\n  params: {\n    notes: [$('Prepare Note').item.json.ankiId],\n    tags: ($json.result?.[0]?.tags ?? []).filter(tag => tag.startsWith('German::')).join(' ')\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1568,
+        224
+      ],
+      "id": "9a7ab8c6-43bb-4a25-b0d3-8792fc4a04c3",
+      "name": "Remove Managed Tags"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8765",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  action: 'addTags',\n  version: 6,\n  params: {\n    notes: [$('Prepare Note').item.json.ankiId],\n    tags: $('Prepare Note').item.json.tags.join(' ')\n  }\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1792,
+        224
+      ],
+      "id": "1b0b468d-b42a-4424-ad5a-e0350c08b1d4",
+      "name": "Add Current Tags"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Prepare Note').item.json.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "AnkiStatus|select",
+              "selectValue": "In Anki"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2464,
+        272
+      ],
+      "id": "e7020192-f3a9-4300-b44f-6af090905671",
+      "name": "Mark In Anki",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Prepara la nota de Anki a partir de la página de Notion.\nconst DECK_NAME = 'German::Grammar';\nconst MODEL_NAME = 'Cloze';\n\n// Anki no admite espacios en las etiquetas.\nconst toTag = (value) => String(value ?? '').trim().replace(/\\s+/g, '_');\nconst page = $json;\n\nreturn {\n  json: {\n    pageId: page.id,\n    status: page.property_anki_status,\n    ankiId: page.property_anki_id ?? null,\n    deckName: DECK_NAME,\n    modelName: MODEL_NAME,\n    fields: {\n      Topic: page.property_topic ?? '',\n      Text: page.property_cloze_text ?? '',\n      'Back Extra': page.property_extra ?? '',\n    },\n    tags: [\n      page.property_topic && `German::Grammar::${toTag(page.property_topic)}`,\n      page.property_level && `German::${toTag(page.property_level)}`,\n    ].filter(Boolean),\n  },\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        192
+      ],
+      "id": "83738e56-cf34-45ec-8fa4-d65b9e2cae18",
+      "name": "Prepare Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "74f4c40f-243e-4d9b-b6ee-a31bd0926cfa",
+              "leftValue": "={{ !$json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2240,
+        144
+      ],
+      "id": "1115f0e9-840f-4ecb-b1ba-42184a7e0f84",
+      "name": "Note Updated?"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Prepare Note').item.json.pageId }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "AnkiStatus|select",
+              "selectValue": "Anki Error"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        16
+      ],
+      "id": "de582eb1-b23a-4624-9aa0-97e3202688b1",
+      "name": "Mark Anki Error",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "content": "## 03 · Crear tarjetas Cloze\n\nSincroniza la base **Grammar** de Notion con Anki mediante **AnkiConnect**.\n\n- `Ready to Export` → crea la nota en el mazo `German::Grammar` y guarda su ID en Notion (`AnkiID`).\n- `Update in Anki` → actualiza los campos y las etiquetas de la nota existente.\n- Si todo sale bien, la página pasa a `In Anki`; si AnkiConnect devuelve un error, a `Anki Error`.\n\nEtiquetas: `German::Grammar::<Topic>` y `German::<Level>`.\n\n### Configuración\n- Anki abierto con el add-on **AnkiConnect** (`http://host.docker.internal:8765`).\n- Tipo de nota `Cloze` con los campos `Topic`, `Text` y `Back Extra`.\n- Credencial **Notion API** y `<YOUR_NOTION_GRAMMAR_DATABASE_ID>`.\n- El mazo y el tipo de nota se cambian en el nodo **Prepare Note**.",
+        "height": 620,
+        "width": 560
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -300
+      ],
+      "id": "45f82c38-5416-4c5a-aa40-b85ec39e9e8e",
+      "name": "Sticky Note"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Pending Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Pending Pages": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Pages": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Prepare Note",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Note": {
+      "main": [
+        [
+          {
+            "node": "Route by Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Status": {
+      "main": [
+        [
+          {
+            "node": "Add Note",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Note Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Note": {
+      "main": [
+        [
+          {
+            "node": "Note Created?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Note Created?": {
+      "main": [
+        [
+          {
+            "node": "Mark In Anki + Save ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Anki Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark In Anki + Save ID": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Note Info": {
+      "main": [
+        [
+          {
+            "node": "Tags Up to Date?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tags Up to Date?": {
+      "main": [
+        [
+          {
+            "node": "Update Note Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove Managed Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Managed Tags": {
+      "main": [
+        [
+          {
+            "node": "Add Current Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Current Tags": {
+      "main": [
+        [
+          {
+            "node": "Update Note Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Note Fields": {
+      "main": [
+        [
+          {
+            "node": "Note Updated?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Note Updated?": {
+      "main": [
+        [
+          {
+            "node": "Mark In Anki",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Anki Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark In Anki": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Anki Error": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}
