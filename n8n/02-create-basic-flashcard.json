@@ -449,7 +449,7 @@
     },
     {
       "parameters": {
-        "content": "## 02 · Crear tarjetas Basic\n\nSincroniza la base **Vocabulary** de Notion con Anki mediante **AnkiConnect**.\n\n- `Ready to Export` → crea la nota en el mazo `German::Vocabulary` y guarda su ID en Notion (`AnkiID`).\n- `Update in Anki` → actualiza los campos y las etiquetas de la nota existente.\n- Si todo sale bien, la página pasa a `In Anki`; si AnkiConnect devuelve un error, a `Anki Error`.\n\nEtiquetas: `German::Vocabulary::<Type>` y `German::<Level>`.\n\n### Configuración\n- Anki abierto con el add-on **AnkiConnect** (`http://host.docker.internal:8765`).\n- Tipo de nota `Basic` con los campos `Front`, `Back`, `Context` y `Example`.\n- Credencial **Notion API** y `<YOUR_NOTION_VOCABULARY_DATABASE_ID>`.\n- El mazo y el tipo de nota se cambian en el nodo **Prepare Note**.",
+        "content": "## 02 · Crear tarjetas Basic\n\nSincroniza la base **Vocabulary** de Notion con Anki mediante **AnkiConnect**.\n\n- `Ready to Export` → crea la nota en el mazo `German::Vocabulary` y guarda su ID en Notion (`AnkiID`).\n- `Update in Anki` → actualiza los campos y las etiquetas de la nota existente.\n- Si todo sale bien, la página pasa a `In Anki`; si AnkiConnect devuelve un error, a `Anki Error`.\n\nEtiqueta: `German::Vocabulary::<Type>`.\n\n### Configuración\n- Anki abierto con el add-on **AnkiConnect** (`http://host.docker.internal:8765`).\n- Tipo de nota `Basic` con los campos `Front`, `Back`, `Context` y `Example`.\n- Credencial **Notion API** y `<YOUR_NOTION_VOCABULARY_DATABASE_ID>`.\n- El mazo y el tipo de nota se cambian en el nodo **Prepare Note**.",
         "height": 620,
         "width": 560
       },
