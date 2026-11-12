@@ -1,0 +1,30 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.47.3
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:${N8N_PORT:-5678}:${N8N_PORT:-5678}"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
+      - TZ=${N8N_TIMEZONE:-UTC}
+    networks:
+      - netzverb-net
+    
+  german-api:
+    build: .
+    restart: always
+    expose:
+      - "5000"
+    networks:
+      - netzverb-net
+
+volumes:
+  n8n_data:
+
+networks:
+  netzverb-net:
+    driver: bridge
