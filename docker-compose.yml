@@ -12,7 +12,7 @@ services:
       - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
       - TZ=${N8N_TIMEZONE:-UTC}
     networks:
-      - netzverb-net
+      - anki-net
     
   german-api:
     build: .
@@ -20,11 +20,11 @@ services:
     expose:
       - "5000"
     networks:
-      - netzverb-net
+      - anki-net
 
 volumes:
   n8n_data:
 
 networks:
-  netzverb-net:
+  anki-net:
     driver: bridge

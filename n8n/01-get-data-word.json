@@ -92,7 +92,7 @@
         160
       ],
       "id": "4782411b-e486-46fb-b2dc-db5d7f10a36c",
-      "name": "Netzverb API",
+      "name": "German Word API",
       "retryOnFail": true,
       "waitBetweenTries": 5000,
       "onError": "continueErrorOutput"
@@ -323,7 +323,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ajusta la respuesta de la Netzverb API al formato de la base de Notion.\nconst { term } = $('Loop Over Words').first().json.normalizedData;\nconst item = $input.first();\nconst data = item.json.data;\n\n// Si la API devolvió otra forma (p. ej. \"Das Haus\" para \"Haus\"), se conservan ambas.\nif (data.word.toLowerCase() !== term.toLowerCase()) {\n  data.word = `${term} (API: ${data.word})`;\n}\n\n// Los campos de texto vacíos se envían como cadena vacía en lugar de null.\nfor (const key of ['translate', 'context', 'example']) {\n  data[key] = data[key] ?? '';\n}\n\nreturn [item];\n"
+        "jsCode": "// Ajusta la respuesta de la German Word API al formato de la base de Notion.\nconst { term } = $('Loop Over Words').first().json.normalizedData;\nconst item = $input.first();\nconst data = item.json.data;\n\n// Si la API devolvió otra forma (p. ej. \"Das Haus\" para \"Haus\"), se conservan ambas.\nif (data.word.toLowerCase() !== term.toLowerCase()) {\n  data.word = `${term} (API: ${data.word})`;\n}\n\n// Los campos de texto vacíos se envían como cadena vacía en lugar de null.\nfor (const key of ['translate', 'context', 'example']) {\n  data[key] = data[key] ?? '';\n}\n\nreturn [item];\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -369,7 +369,7 @@
     },
     {
       "parameters": {
-        "errorMessage": "La Netzverb API alcanzó el límite de peticiones (429). Reintenta más tarde."
+        "errorMessage": "La API alcanzó el límite de peticiones (429). Reintenta más tarde."
       },
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
@@ -487,7 +487,7 @@
     },
     {
       "parameters": {
-        "content": "## 01 · Obtener datos de palabras\n\nCompleta las palabras nuevas de la base **Vocabulary** de Notion.\n\n1. Toma las páginas en `Draft` (manual) o las páginas nuevas (trigger cada 5 min).\n2. Las frases (`Type = Phrase`) van directo al agente de IA.\n3. Las palabras se consultan en la **Netzverb API**. Si no hay un resultado único, la IA actúa como respaldo.\n4. Guarda traducción, contexto y ejemplo, y deja la página en `To-Check` (API) o `Generated-IA` (IA) para revisión manual.\n\nAnte un `429`, espera 15 min y detiene la ejecución.\n\n### Configuración\n- Credenciales: **Notion API** y **Mistral Cloud API**.\n- Reemplaza `<YOUR_NOTION_VOCABULARY_DATABASE_ID>` en los nodos de Notion.",
+        "content": "## 01 · Obtener datos de palabras\n\nCompleta las palabras nuevas de la base **Vocabulary** de Notion.\n\n1. Toma las páginas en `Draft` (manual) o las páginas nuevas (trigger cada 5 min).\n2. Las frases (`Type = Phrase`) van directo al agente de IA.\n3. Las palabras se consultan en la **German Word API**. Si no hay un resultado único, la IA actúa como respaldo.\n4. Guarda traducción, contexto y ejemplo, y deja la página en `To-Check` (API) o `Generated-IA` (IA) para revisión manual.\n\nAnte un `429`, espera 15 min y detiene la ejecución.\n\n### Configuración\n- Credenciales: **Notion API** y **Mistral Cloud API**.\n- Reemplaza `<YOUR_NOTION_VOCABULARY_DATABASE_ID>` en los nodos de Notion.",
         "height": 640,
         "width": 560
       },
@@ -582,14 +582,14 @@
         ],
         [
           {
-            "node": "Netzverb API",
+            "node": "German Word API",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Netzverb API": {
+    "German Word API": {
       "main": [
         [
           {

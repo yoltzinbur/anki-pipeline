@@ -1,4 +1,4 @@
-# Anki Pipeline · Netzverb API
+# Anki Pipeline
 
 > Pipeline de automatización que convierte palabras en alemán en tarjetas de **Anki**: una API de scraping en **FastAPI** extrae los datos lingüísticos, **n8n** orquesta el flujo, **Notion** sirve como base de datos con revisión humana y un LLM (**Mistral**) actúa como respaldo cuando el scraping no alcanza.
 
@@ -27,7 +27,7 @@ flowchart LR
         GRA[(Grammar)]
     end
 
-    subgraph Docker["Docker Compose · red netzverb-net"]
+    subgraph Docker["Docker Compose · red anki-net"]
         W1[01 · Get Word Data]
         W2[02 · Create Basic Flashcards]
         W3[03 · Create Cloze Flashcards]
@@ -173,6 +173,8 @@ Si no se indica la categoría y la palabra tiene varios significados, la API no 
   ]
 }
 ```
+
+> Los datos de estos ejemplos provienen de [verbformen.es](https://www.verbformen.es) y están sujetos a la licencia de su fuente (ver [Fuentes y licencias](#fuentes-y-licencias)).
 
 #### Códigos de error
 
@@ -320,9 +322,20 @@ anki-pipeline/
 - [ ] Modelos Pydantic para validar y documentar el esquema de respuesta.
 - [ ] Separar `main.py` en módulos (`routes`, `scrapers`, `parsers`).
 
-## Aviso
+## Fuentes y licencias
 
-Proyecto de uso personal y educativo. Los datos lingüísticos pertenecen a sus respectivos sitios (verbformen.es, woerter.es). Si usas este código, respeta sus términos de servicio y no hagas peticiones masivas.
+Este proyecto es independiente y **no está afiliado a Netzverb** ni a ninguna de las fuentes. Este repositorio publica código, no los datos: la API los consulta en el momento en que se le piden.
+
+| Contenido | Fuente | Licencia |
+|---|---|---|
+| Datos lingüísticos (traducciones, formas, declinaciones) | Netzverb ([www.verbformen.de](https://www.verbformen.de)), vía [verbformen.es](https://www.verbformen.es) y [woerter.es](https://www.woerter.es) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
+| Frases de ejemplo | [Tatoeba](https://tatoeba.org) | [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/) |
+| Definiciones y frases | [Wiktionary](https://de.wiktionary.org) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+
+Si usas este código:
+
+- **Respeta a las fuentes:** mantén pausas entre peticiones y no hagas consultas masivas.
+- **Si republicas los datos** (por ejemplo, al compartir un mazo de Anki), cita a Netzverb (www.verbformen.de) con un enlace, indica la licencia CC BY-SA 4.0 y publica el resultado bajo la misma licencia.
 
 ## Licencia
 
